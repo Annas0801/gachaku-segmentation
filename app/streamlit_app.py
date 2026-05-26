@@ -12,17 +12,17 @@ def load_artifacts():
     # Bangun path ke folder models (satu level di atas app)
     models_dir = os.path.join(base_dir, '..', 'models')
     
-    # Debug: tampilkan path untuk verifikasi (hanya pertama kali)
-    if 'debug_shown' not in st.session_state:
-        st.write(f"Base dir: {base_dir}")
-        st.write(f"Models dir: {models_dir}")
-        st.write(f"Files in models dir: {os.listdir(models_dir) if os.path.exists(models_dir) else 'DIR NOT FOUND'}")
-        st.session_state.debug_shown = True
+    # # Debug: tampilkan path untuk verifikasi (hanya pertama kali)
+    # if 'debug_shown' not in st.session_state:
+    #     st.write(f"Base dir: {base_dir}")
+    #     st.write(f"Models dir: {models_dir}")
+    #     st.write(f"Files in models dir: {os.listdir(models_dir) if os.path.exists(models_dir) else 'DIR NOT FOUND'}")
+    #     st.session_state.debug_shown = True
     
-    model = joblib.load(os.path.join(models_dir, 'kprototypes_best.pkl'))
-    scaler = joblib.load(os.path.join(models_dir, 'scaler.pkl'))
-    encoders = joblib.load(os.path.join(models_dir, 'encoders.pkl'))
-    return model, scaler, encoders
+    # model = joblib.load(os.path.join(models_dir, 'kprototypes_best.pkl'))
+    # scaler = joblib.load(os.path.join(models_dir, 'scaler.pkl'))
+    # encoders = joblib.load(os.path.join(models_dir, 'encoders.pkl'))
+    # return model, scaler, encoders
 
 model, scaler, encoders = load_artifacts()
 
