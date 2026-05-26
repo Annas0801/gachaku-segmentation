@@ -2,19 +2,31 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+import os
 
-# Load model dan preprocessor
+# Path absolut berdasarkan lokasi file ini
+base_dir = os.path.dirname(os.path.abspath(__file__))
+
 @st.cache_resource
 def load_artifacts():
-    model = joblib.load('../models/kprototypes_best.pkl')
-    scaler = joblib.load('../models/scaler.pkl')
-    encoders = joblib.load('../models/encoders.pkl')
+    # Bangun path ke folder models (satu level di atas app)
+    models_dir = os.path.join(base_dir, '..', 'models')
+    
+    # Debug: tampilkan path untuk verifikasi (hanya pertama kali)
+    if 'debug_shown' not in st.session_state:
+        st.write(f"Base dir: {base_dir}")
+        st.write(f"Models dir: {models_dir}")
+        st.write(f"Files in models dir: {os.listdir(models_dir) if os.path.exists(models_dir) else 'DIR NOT FOUND'}")
+        st.session_state.debug_shown = True
+    
+    model = joblib.load(os.path.join(models_dir, 'kprototypes_best.pkl'))
+    scaler = joblib.load(os.path.join(models_dir, 'scaler.pkl'))
+    encoders = joblib.load(os.path.join(models_dir, 'encoders.pkl'))
     return model, scaler, encoders
 
 model, scaler, encoders = load_artifacts()
 
-# Definisi fitur numeric dan categorical (sama seperti training)
+# Definisi fitur
 numeric_cols = ['jumlah_transaksi', 'total_belanja', 'rata_rata_transaksi', 
                 'std_transaksi', 'rata_rata_pajak', 'rentang_transaksi']
 categorical_cols = ['produk_favorit', 'provider_terbanyak', 'channel_terbanyak']
@@ -23,7 +35,6 @@ st.set_page_config(page_title="Segmentasi Pelanggan Gachaku", layout="centered")
 st.title("🎮 Segmentasi Pelanggan Gachaku")
 st.markdown("Masukkan profil pelanggan untuk mengetahui segmennya.")
 
-# Input dari user
 with st.form("input_form"):
     col1, col2 = st.columns(2)
     with col1:
@@ -42,28 +53,22 @@ with st.form("input_form"):
     submitted = st.form_submit_button("Prediksi Segmen")
 
 if submitted:
-    # Buat array input
     numeric_input = np.array([[jumlah, total, rata, std, pajak_rata, rentang]])
     numeric_scaled = scaler.transform(numeric_input)
     
-    # Encode categorical
     cat_encoded = []
     for col, le in zip(categorical_cols, [encoders[c] for c in categorical_cols]):
-        val = locals()[col.split('_')[0]]  # ambil nama variabel tanpa '_terbanyak'
-        # Jika nilai tidak dikenal, gunakan 0
+        val = locals()[col.split('_')[0]]
         if val in le.classes_:
             cat_encoded.append(le.transform([val])[0])
         else:
             cat_encoded.append(0)
     cat_encoded = np.array([cat_encoded])
     
-    # Gabungkan
     X_input = np.hstack((numeric_scaled, cat_encoded))
-    # Indeks kategorikal harus sama dengan saat training
-    categorical_indices = list(range(6, 9))  # karena numeric 6 kolom
+    categorical_indices = list(range(6, 9))
     cluster = model.predict(X_input, categorical=categorical_indices)[0]
     
-    # Mapping cluster ke nama segmen (berdasarkan analisis sebelumnya)
     segmen_map = {
         0: "🐟 Casual Player",
         1: "💎 High Spender (Whale)",
@@ -76,7 +81,6 @@ if submitted:
     st.success(f"**Segmen Pelanggan:** {segmen}")
     st.info(f"Cluster ID: {cluster}")
     
-    # Rekomendasi sederhana
     if cluster == 0:
         st.markdown("📌 **Rekomendasi:** Tawarkan bundle ROBUX eksklusif, program loyalitas tier platinum.")
     elif cluster == 1:
